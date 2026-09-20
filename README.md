@@ -1,14 +1,13 @@
-# 💜 FinanceBuddy
+# Finance-Buddy
+### Budgeting app with an approval-gated emergency fund and mandatory bill submission.
 
-**A budgeting app that locks your emergency fund behind a real approval — not just a suggestion.**
+A personal finance web app that enforces strict rule for money management instead of just suggesting it. A user's monthly income is automatically divided in buckets like Daily expenses, Savings, Emergency funds or any other saving specified for any expense in future(Buying laptop, Buying car) according to the plan accepted by user from multiple suggestion given by AI Financial Assistant after analyzing pocket money or salary of user. The Daily expenses bucket is freely spendable, but the emergency fund and savings is locked: it can be accessed after permission of parent, the user raises a request stating the amount, category, and reason. Their manager/parent reviews and approves or rejects it, and funds are released only on approval. The user must then upload a bill or receipt as proof, and any unspent amount is flagged for return before the request can be closed.
 
-FinanceBuddy is a family finance platform that enforces strict rules around money management instead of merely suggesting them. A user's income (allowance or salary) is automatically split into three buckets — **Everyday Spending**, **Emergency Fund**, and **Savings Goals** — following a plan recommended by an AI Financial Assistant based on their income. Everyday spending is freely usable. The Emergency Fund and Savings are **locked**: releasing money requires the user to submit a request (amount, category, reason), have their parent/guardian approve or reject it, and — once approved — upload a bill or receipt as proof of spend. Any unspent amount is flagged for return before the request can be closed.
+The funds being saved for specific item or event aren't permitted to withdraw till the completion of target set i.e. only the full amount needed for particular item can be withdrawable after saving it completely, user can't spend that fund before reaching the decided saving amount. 
 
-## 🚩 Why
+In India this is a common mistake made by 70% of people that they only start savings only after they get job, suffers a financial burden after emergency or after the burden of responsibilities. By making this platform we want our youth to be aware of money managing. It helps students and teenagers to start saving money from an early age with their parents have an eye on their expenses.
 
-In India, an estimated 70% of people only start saving once they have a job, leaving them exposed to financial strain the moment an emergency or new responsibility hits. FinanceBuddy exists to build the habit earlier: it helps students and teenagers start managing and saving money while parents keep visibility into how it's spent.
-
-The core insight: in most budgeting apps, the "emergency fund" is the first thing people raid for non-emergencies. Adding a **human approval step** and a **proof-of-spend requirement** keeps that money reserved for what it was actually meant for.
+The goal is to solve a common problem with budgeting apps — that the emergency fund is the first thing people raid for non-emergencies. By adding a human approval step and a proof-of-spend requirement, the money stays reserved for what it was meant for.
 
 ---
 
