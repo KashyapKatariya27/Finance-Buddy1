@@ -1,4 +1,4 @@
-# Finance-Buddy
+# 💜 Finance-Buddy
 ### Budgeting app with an approval-gated emergency fund and mandatory bill submission.
 
 A personal finance web app that enforces strict rule for money management instead of just suggesting it. A user's monthly income is automatically divided in buckets like Daily expenses, Savings, Emergency funds or any other saving specified for any expense in future(Buying laptop, Buying car) according to the plan accepted by user from multiple suggestion given by AI Financial Assistant after analyzing pocket money or salary of user. The Daily expenses bucket is freely spendable, but the emergency fund and savings is locked: it can be accessed after permission of parent, the user raises a request stating the amount, category, and reason. Their manager/parent reviews and approves or rejects it, and funds are released only on approval. The user must then upload a bill or receipt as proof, and any unspent amount is flagged for return before the request can be closed.
