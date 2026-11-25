@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinanceBuddy – Goal-First Savings For Every Stage of Life</title>
+
+  <!-- Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="lending.css" />
+  <style>
+    .hero__3way {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    .hero__3way-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .btn--pill {
+      border-radius: 999px;
+      padding: 0.75rem 1.3rem;
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+    .btn--family {
+      background: linear-gradient(135deg, #7c5cff, #5a3fd6);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(124, 92, 255, 0.4);
+    }
+    .btn--student {
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+    }
+    .btn--individual {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+    }
+    .disclaimer-bar {
+      margin-top: 50px;
+      padding: 16px 20px;
+      background: rgba(15, 10, 45, 0.6);
+      border: 1px solid rgba(124, 92, 255, 0.25);
+      border-radius: 12px;
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--body-text);
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============ HEADER ============ -->
+  <header class="header">
+    <div class="container header__inner">
+
+      <a href="/" class="logo" aria-label="FinanceBuddy home">
+        <span class="logo__icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 2.5 4 5.5v6c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10v-6l-8-3Z" />
+            <path d="m8.5 12 2.5 2.5 4.5-5" />
+          </svg>
+        </span>
+        <span class="logo__text"><span class="logo__finance">Finance</span><span class="logo__buddy">Buddy</span></span>
+      </a>
+
+      <nav class="nav" aria-label="Main navigation">
+        <a href="#features">Goal Engine</a>
+        <a href="#ai-copilot">AI Coach</a>
+        <a href="#security">Self-Discipline Lock</a>
+        <a href="#learning">Learning Hub</a>
+      </nav>
+
+      <div class="header__actions">
+        <a href="/login" class="link-signin">Sign In</a>
+        <a href="/register" class="btn btn--primary btn--small">Get Started Free</a>
+      </div>
+
+    </div>
+  </header>
+
+  <main>
+    <!-- ============ HERO ============ -->
+    <section class="hero">
+      <div class="container hero__inner">
+
+        <div class="hero__content">
+          <span class="badge">🎯 Goal-First Financial Freedom</span>
+
+          <h1>Save for every goal in your life, at any age.</h1>
+
+          <p class="hero__text">
+            FinanceBuddy is the goal-centered money platform for kids, students, and adults.
+            Turn dreams into milestones with automated splits, self-discipline locks, round-up savings,
+            and age-tailored AI financial coaching.
+          </p>
+
+          <div class="hero__3way">
+            <span style="font-size:0.75rem; color:#b8b0e0; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">Choose your entry path:</span>
+            <div class="hero__3way-row">
+              <a href="/register?mode=family" class="btn btn--pill btn--family">👨‍👩‍👧 For Kids &amp; Families</a>
+              <a href="/register?mode=teen" class="btn btn--pill btn--student">🎓 For Students</a>
+              <a href="/register?mode=myself" class="btn btn--pill btn--individual">👤 For Everyone</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero__image">
+          <img src="hero.jpg" alt="A family smiling while tracking savings goals on mobile" />
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============ STEPS ============ -->
+    <section class="steps">
+      <div class="container steps__inner">
+        <a href="/register" class="btn btn--primary btn--large">1. Set Unlimited Goals</a>
+        <a href="/register" class="btn btn--primary btn--large">2. Age-Aware Auto-Splits</a>
+        <a href="/register" class="btn btn--primary btn--large">3. Lock &amp; Reach Dreams</a>
+      </div>
+
+      <div class="container">
+        <div class="disclaimer-bar">
+          ⚠️ <strong>Disclaimer:</strong> FinanceBuddy is a goal-planning and learning tool. All balances are simulated; no real money is held or moved.
+        </div>
+      </div>
+    </section>
+  </main>
+
+</body>
+</html>

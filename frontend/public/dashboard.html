@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinanceBuddy – Dashboard</title>
+
+  <!-- Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="dashboard.css" />
+  <style>
+    .nav__link--active {
+      color: #ffffff !important;
+      font-weight: 700;
+    }
+    .disclaimer-banner {
+      background: rgba(15, 10, 45, 0.6);
+      border: 1px solid rgba(124, 92, 255, 0.25);
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-top: 24px;
+      font-size: 11px;
+      color: #b8b0e0;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============ HEADER ============ -->
+  <header class="header">
+    <div class="container header__inner">
+
+      <a href="/" class="logo" aria-label="FinanceBuddy home">
+        <span class="logo__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 2.5 4 5.5v6c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10v-6l-8-3Z" />
+            <path d="m8.5 12 2.5 2.5 4.5-5" />
+          </svg>
+        </span>
+        <span class="logo__text"><span class="logo__finance">Finance</span><span class="logo__buddy">Buddy</span></span>
+      </a>
+
+      <nav class="nav" aria-label="Main navigation">
+        <a href="/dashboard" class="nav__link nav__link--active" aria-current="page">Overview</a>
+        <a href="/goals" class="nav__link">Savings Goals</a>
+        <a href="/emergency" class="nav__link">Emergency Vault</a>
+        <a href="/learning" class="nav__link">Learning Hub</a>
+        <a href="/transactions" class="nav__link">Transactions</a>
+        <a href="/allowance" class="nav__link" id="navChores">Chores &amp; Allowance</a>
+        <a href="/my-child" class="nav__link" id="navMyChild">My Child</a>
+      </nav>
+
+      <div class="user">
+        <div class="user__text">
+          <strong class="user-name">Sarah Jenkins</strong>
+          <span class="user-role">Guardian Account</span>
+        </div>
+        <img src="sarah.jpg" alt="Profile avatar" class="avatar avatar--small" />
+      </div>
+
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- ============ DASHBOARD ============ -->
+    <section class="dashboard">
+
+      <!-- ---------- LEFT COLUMN ---------- -->
+      <div class="dashboard__main">
+
+        <div class="page-head">
+          <div>
+            <h1 id="dashTitle">Sarah's Family Dashboard</h1>
+            <p id="dashSub">Guiding active goal-based wealth</p>
+          </div>
+          <button type="button" class="btn-fund">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5 12h14" /><path d="M12 5v14" />
+            </svg>
+            + Add Funds
+          </button>
+        </div>
+
+        <!-- Account Balance & Allocation Card -->
+        <article class="card card--child">
+          <div class="child__top">
+            <div class="child__info">
+              <div style="width:48px; height:48px; border-radius:50%; background:linear-gradient(135deg, #7c5cff, #4f6bff); display:grid; place-items:center; font-size:22px;">
+                🎯
+              </div>
+              <div>
+                <h2 class="child__name">Sarah Jenkins</h2>
+                <p class="child__meta">
+                  <span class="user-role">Active Account</span>
+                  <span class="tag tag--stable">GOAL-FIRST</span>
+                </p>
+              </div>
+            </div>
+            <div class="child__balance">
+              <span class="child__balance-label">TOTAL ALLOCATED BALANCE</span>
+              <strong class="child__balance-value">₹0.00</strong>
+            </div>
+          </div>
+
+          <div class="allocation__head">
+            <h3>Active Allocation Plan</h3>
+            <a href="#" class="link-indigo">Modify Plan Split</a>
+          </div>
+
+          <div class="allocation__bar" role="img"
+               aria-label="Everyday spending, emergency locked, smart savings">
+            <span class="seg seg--blue"   style="width: 50%"></span>
+            <span class="seg seg--orange" style="width: 20%"></span>
+            <span class="seg seg--green"  style="width: 30%"></span>
+          </div>
+
+          <ul class="legend">
+            <li><i class="dot dot--blue"></i><span class="legend-ev">50% Everyday Spending</span></li>
+            <li><i class="dot dot--orange"></i><span class="legend-em">20% Emergency Vault</span></li>
+            <li><i class="dot dot--green"></i><span class="legend-sv">30% Goal Savings</span></li>
+          </ul>
+        </article>
+
+      </div>
+
+      <!-- ---------- RIGHT COLUMN ---------- -->
+      <aside class="dashboard__side">
+
+        <article class="card side-card">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+            <span style="font-size:20px;">🛡️</span>
+            <h3 style="margin:0; font-size:16px;">Approval &amp; Locks</h3>
+          </div>
+          <p style="font-size:13px; color:#b8b0e0; line-height:1.5;">
+            No requests waiting right now. When an early withdrawal from a goal is submitted, review details here.
+          </p>
+        </article>
+
+        <article class="card side-card" style="margin-top:16px;">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+            <span style="font-size:20px;">💡</span>
+            <h3 style="margin:0; font-size:16px;">AI Financial Coach</h3>
+          </div>
+          <p style="font-size:13px; color:#b8b0e0; line-height:1.5;">
+            "Consistent contributions to your savings goals ensure milestones are reached ahead of schedule. Your emergency vault guards against unexpected disruption."
+          </p>
+        </article>
+
+      </aside>
+
+    </section>
+
+    <div class="disclaimer-banner">
+      ⚠️ <strong>Disclaimer:</strong> FinanceBuddy is a goal-planning and learning tool. All balances are simulated; no real money is held or moved.
+    </div>
+
+  </main>
+
+</body>
+</html>
