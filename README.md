@@ -77,26 +77,98 @@ FinanceBuddy comes pre-seeded with 4 demo accounts representing each mode:
 
 | Account | Email | Password | Role / Mode | Age | Starting Profile |
 |---|---|---|---|---|---|
-| **Sarah Jenkins** | `sarah@example.com` | `password123` | `PARENT` (Family) | 38 | Parent managing family wallet & child approvals |
-| **Leo Jenkins** | `leo@example.com` | `password123` | `CHILD` (Family) | 14 | Active goal: "Smart Coding Laptop" (80% achieved) |
-| **Riya Sharma** | `riya@example.com` | `password123` | `INDIVIDUAL` (Myself) | 28 | Goals: "Trip to Japan" (75%) & "6-Month Emergency Fund" (100%) |
-| **Aman Verma** | `aman@example.com` | `password123` | `INDIVIDUAL` (Teen) | 17 | Student goal: "Study Laptop" (50%) with partner `mentor@example.com` |
+| **Sarah Jenkins** | `sarah@demo.com` | `password123` | `PARENT` (Family) | 38 | Parent managing family wallet & child approvals |
+| **Leo Jenkins** | `leo@demo.com` | `password123` | `CHILD` (Family) | 10 | Supervised goal: "Galactic Explorer LEGO Set" (50% achieved) |
+| **Riya Sharma** | `riya@demo.com` | `password123` | `INDIVIDUAL` (Myself) | 26 | Independent adult goal: "Kyoto Autumn Expedition" (50%) + Emergency runway |
+| **Aman Verma** | `aman@demo.com` | `password123` | `INDIVIDUAL` (Teen) | 19 | Student goal: "M3 Pro Development Rig" with partner `mentor@demo.com` |
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Modern Tech Stack (TypeScript Everywhere)
+
+FinanceBuddy is structured as a clean modern **TypeScript-everywhere** monorepo:
+
+```
+Finance-Buddy1/
+├── client/              # React 18 + Vite + TypeScript Frontend
+│   ├── src/
+│   │   ├── components/  # Navbar, Footer, 3D HeroScene (R3F + Drei)
+│   │   ├── pages/       # Landing, Dashboard, Goals, LearningHub, etc.
+│   │   ├── store/       # Zustand reactive client state
+│   │   ├── theme/       # Midnight Aurora design tokens
+│   │   ├── api.ts       # Type-safe API client
+│   │   ├── App.tsx      # React Router DOM routes
+│   │   ├── globals.css  # 3-line Tailwind entry
+│   │   └── main.tsx     # Root mount
+│   ├── index.html       # Vite HTML entry
+│   ├── tailwind.config.ts
+│   └── vite.config.ts
+├── server/              # Express + TypeScript Backend
+│   ├── prisma/          # schema.prisma (PostgreSQL Prisma models)
+│   ├── src/
+│   │   ├── middleware/  # JWT cookie auth & session guards
+│   │   ├── routes/      # auth, dashboard, goals, approvals, learning, ai, family
+│   │   ├── utils/       # calculator.ts (pacing, emergency runway, delay days)
+│   │   ├── config.ts    # environment configuration
+│   │   ├── db.ts        # PrismaClient + resilient in-memory fallback
+│   │   ├── seed.ts      # demo data seeder
+│   │   └── index.ts     # Express entry & client static distribution host
+│   └── tests/           # Comprehensive API & E2E tests
+├── shared/              # Shared Zod validation schemas, DTOs & math utils
+│   └── src/index.ts
+├── tests/               # Monorepo integration & E2E tests
+├── render.yaml          # Render Blueprint (Web service + PostgreSQL)
+├── yarn.lock            # Yarn lockfile
+└── package.json         # Workspace root scripts
+```
 
 | Layer | Technology |
 |---|---|
-| **Runtime** | Node.js 22.5+ (uses built-in `node:sqlite`) |
-| **Server** | Zero-dependency native `node:http` |
-| **Database** | SQLite (WAL mode, foreign keys, automated migrations) |
-| **Auth** | HMAC-SHA256 signed session tokens + `crypto.scrypt` password hashing |
-| **Frontend** | Responsive Vanilla HTML5/CSS3 + `client.js` integration layer |
-| **AI Layer** | Age-aware AI Coach (Groq llama-3.1-8b-instant with rule-based heuristic fallbacks) |
-| **Testing** | Node.js built-in `node:test` and `node:assert/strict` |
+| **Frontend** | React 18, Vite, TypeScript (`strict: true`), React Router v6, Zustand, Tailwind CSS (**Midnight Aurora** tokens), Framer Motion, `@react-three/fiber` + `@react-three/drei` 3D Canvas. |
+| **Backend** | Node.js, Express, TypeScript (`tsx` for dev, `tsc` for production), Prisma ORM with PostgreSQL, Zod validation, JWT in `httpOnly` cookies, bcrypt. Express serves `client/dist` in production. |
+| **Shared** | `@finance-buddy/shared` with single source of truth Zod schemas, age-presets, and `Intl.NumberFormat` helpers. |
+| **Theme** | **Midnight Aurora**: Deep obsidian `midnight-950/900/800`, vibrant Aurora glows (`aurora-green`, `aurora-cyan`, `aurora-electric`, `aurora-pink`). |
+| **Deployment** | Render Blueprint (`render.yaml`): 1 Web Service (`npm install && npm run build` -> `npm run migrate && npm start`) + 1 PostgreSQL Database. |
 
 ---
+
+## 🚀 Getting Started
+
+### 1. Installation
+Install dependencies across all workspaces and generate `yarn.lock`:
+```bash
+yarn install
+```
+
+### 2. Running in Development
+Start both the React Vite frontend and Express TypeScript backend concurrently:
+```bash
+yarn dev
+# Or with npm:
+npm run dev
+```
+- Frontend dev server: `http://localhost:3000`
+- Backend API server: `http://localhost:5000`
+
+### 3. Running E2E Test Suite
+Execute the comprehensive end-to-end test suite testing all 3 account modes:
+```bash
+yarn test
+# Or with npm:
+npm test
+```
+
+### 4. Building for Production
+Compile TypeScript for `shared`, `server`, and build the client distribution bundle:
+```bash
+yarn build
+```
+
+### 5. Running Production Server
+```bash
+yarn start
+```
+The server serves the compiled React 18 client directly from `client/dist` at `http://localhost:5000`.
 
 ## 🚀 Running Locally
 

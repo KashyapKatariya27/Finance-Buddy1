@@ -1,0 +1,174 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  PARENT
+  CHILD
+  INDIVIDUAL
+}
+
+enum AccountMode {
+  FAMILY
+  MYSELF
+  TEEN
+}
+
+enum GoalCategory {
+  education
+  gadget
+  travel
+  emergency
+  business
+  health
+  wedding
+  home
+  other
+}
+
+enum GoalPriority {
+  low
+  medium
+  high
+}
+
+enum GoalStatus {
+  active
+  completed
+  cancelled
+}
+
+enum ApprovalStatus {
+  pending
+  cooling_off
+  approved
+  rejected
+  completed
+}
+
+enum ApprovalType {
+  allowance
+  early_goal_withdrawal
+  emergency_drawdown
+}
+
+model User {
+  id                         Int                @id @default(autoincrement())
+  fullName                   String
+  email                      String             @unique
+  passwordHash               String
+  role                       Role               @default(INDIVIDUAL)
+  accountMode                AccountMode        @default(FAMILY)
+  age                        Int                @default(25)
+  currency                   String             @default("INR")
+  parentId                   Int?
+  parent                     User?              @relation("FamilyChildren", fields: [parentId], references: [id])
+  children                   User[]             @relation("FamilyChildren")
+  accountabilityPartnerEmail String?
+  everydayCents              Int                @default(0)
+  emergencyCents             Int                @default(0)
+  savingsCents               Int                @default(0)
+  splitEveryday              Int                @default(50)
+  splitEmergency             Int                @default(20)
+  splitSavings               Int                @default(30)
+  monthlyExpensesCents       Int                @default(2000000)
+  streakDays                 Int                @default(1)
+  createdAt                  DateTime           @default(now())
+  updatedAt                  DateTime           @updatedAt
+
+  goals                      Goal[]
+  transactions               Transaction[]
+  childApprovals             Approval[]         @relation("ChildApprovals")
+  parentApprovals            Approval[]         @relation("ParentApprovals")
+  reviewedApprovals          Approval[]         @relation("ReviewedApprovals")
+  learningProgress           LearningProgress[]
+  appEvents                  AppEvent[]
+
+  @@index([email])
+  @@index([parentId])
+}
+
+model Goal {
+  id                Int          @id @default(autoincrement())
+  userId            Int
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name              String
+  category          GoalCategory @default(other)
+  targetCents       Int
+  currentCents      Int          @default(0)
+  deadline          String
+  priority          GoalPriority @default(medium)
+  icon              String       @default("🎯")
+  status            GoalStatus   @default(active)
+  autoSaveCents     Int          @default(0)
+  autoSaveFrequency String       @default("none")
+  roundUpEnabled    Boolean      @default(false)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  approvals         Approval[]
+
+  @@index([userId, status])
+}
+
+model Transaction {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String
+  amountCents Int
+  note        String
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
+}
+
+model Approval {
+  id           Int            @id @default(autoincrement())
+  childId      Int
+  child        User           @relation("ChildApprovals", fields: [childId], references: [id], onDelete: Cascade)
+  parentId     Int?
+  parent       User?          @relation("ParentApprovals", fields: [parentId], references: [id])
+  partnerEmail String?
+  amountCents  Int
+  reason       String
+  status       ApprovalStatus @default(pending)
+  reviewedById Int?
+  reviewedBy   User?          @relation("ReviewedApprovals", fields: [reviewedById], references: [id])
+  goalId       Int?
+  goal         Goal?          @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  unlockAt     DateTime?
+  coolingOff   Boolean        @default(false)
+  delayDays    Int            @default(0)
+  type         ApprovalType   @default(allowance)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([parentId, status])
+  @@index([partnerEmail, status])
+}
+
+model LearningProgress {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  moduleId    String
+  completed   Boolean  @default(false)
+  completedAt DateTime @default(now())
+
+  @@unique([userId, moduleId])
+}
+
+model AppEvent {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action    String
+  details   String   @default("")
+  createdAt DateTime @default(now())
+}

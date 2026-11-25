@@ -4,22 +4,29 @@ services:
     runtime: node
     plan: free
     region: oregon
-    buildCommand: npm install
-    startCommand: node server.js
+    buildCommand: npm install && npm run build
+    startCommand: npm run migrate && npm start
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: 3000
+        value: 5000
       - key: HOST
         value: 0.0.0.0
-      - key: DATA_DIR
-        value: /var/data
+      - key: DATABASE_URL
+        fromDatabase:
+          name: finance-buddy-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
       - key: SESSION_SECRET
         generateValue: true
       - key: GROQ_API_KEY
         sync: false
-    disk:
-      name: finance-buddy-data
-      mountPath: /var/data
-      sizeGB: 1
+
+databases:
+  - name: finance-buddy-db
+    databaseName: financebuddy
+    user: financebuddy
+    region: oregon
+    plan: free

@@ -5,3 +5,10 @@ data-test/
 *.sqlite
 *.sqlite-shm
 *.sqlite-wal
+
+dist/
+client/dist/
+server/dist/
+shared/dist/
+*.log
+.pytest_cache/
