@@ -3,8 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FinanceBuddy — AI Financial Academy</title>
+<title>FinanceBuddy — Financial Learning Hub</title>
 <link rel="stylesheet" href="academy.css">
+<style>
+  .disclaimer-banner {
+    background: rgba(15, 10, 45, 0.6);
+    border: 1px solid rgba(124, 92, 255, 0.25);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-top: 24px;
+    font-size: 11px;
+    color: #b8b0e0;
+    text-align: center;
+  }
+</style>
 </head>
 <body>
 
@@ -17,22 +29,23 @@
       </svg>
     </div>
     <div class="logo-text"><span class="light">Finance</span><span class="buddy">Buddy</span></div>
-    <span class="plan-badge">Child</span>
+    <span class="plan-badge">Academy</span>
   </div>
 
   <div class="nav-links">
-    <a href="#">Wallet</a>
-    <a href="#">Savings Goals</a>
-    <a href="#" class="active">Learning Hub</a>
-    <a href="#">Emergency Vault</a>
+    <a href="/dashboard">Overview</a>
+    <a href="/goals">Savings Goals</a>
+    <a href="/emergency">Emergency Vault</a>
+    <a href="/learning" class="active">Learning Hub</a>
+    <a href="/transactions">Transactions</a>
   </div>
 
   <div class="nav-right">
     <div class="user-info">
-      <span class="user-name">Sarah Jenkins</span>
-      <span class="user-role">Guardian Account</span>
+      <span class="user-name">User</span>
+      <span class="user-role">Active Account</span>
     </div>
-    <div class="avatar avatar-sarah">SJ</div>
+    <div class="avatar avatar-sarah">FB</div>
   </div>
 </nav>
 
@@ -40,92 +53,63 @@
 
   <div class="dashboard-header">
     <div class="title-row">
-      <h1>AI Financial Academy</h1>
-      <span class="badge-streak">Leo's Academy Streak: 5 Days 🔥</span>
+      <h1>Financial Learning Hub</h1>
+      <span class="badge-streak">Academy Streak: 1 Day 🔥</span>
     </div>
-    <p class="muted">Engaging bite-sized lessons, interactive challenges, and rewards to teach smart money habits naturally.</p>
+    <p class="muted">Bite-sized interactive lessons and challenges tailored for kids, students, and adults. Learn budgeting, emergency funds, SIP investing, and scam defense.</p>
   </div>
 
   <div class="grid-top">
 
-    <div class="left-col">
+    <div class="left-col" style="flex:2;">
       <section class="card challenge-card">
         <div class="challenge-header">
           <div class="challenge-title-group">
             <span class="challenge-icon">⚡</span>
             <h2>Today's Fast Challenge Scenario</h2>
           </div>
-          <span class="badge-reward">+$2.50 Reward Offered</span>
+          <span class="badge-reward">+25 Literacy Points</span>
         </div>
 
-        <p class="challenge-quote">"Leo wants to buy a limited edition skin in his favorite gaming platform. He has $20 left of discretionary allowance, but knows he also promised to save for Sparky's vet checkout next month."</p>
-        <p class="challenge-desc">How should he weigh this? Guide him through the decision framework to trigger his parent-funded challenge reward.</p>
+        <p class="challenge-quote">"You have ₹2,000 left in discretionary spending this month, but an unplanned gadget repair is coming up. Your emergency vault is fully funded."</p>
+        <p class="challenge-desc">How should you best prioritize this expense without compromising your long-term wealth milestones?</p>
 
         <div class="challenge-options">
-          <button class="btn-option-primary">A) Allocate skin to Wants &amp; wait</button>
-          <button class="btn-option-secondary" disabled>B) Borrow from Emergency Locked</button>
+          <button class="btn-option-primary">A) Cover repair from Emergency Vault &amp; keep discretionary intact</button>
+          <button class="btn-option-secondary" disabled>B) Delay emergency fund contribution</button>
         </div>
       </section>
 
-      <section class="card modules-card">
-        <h2>Academy Core Modules</h2>
-
+      <section class="card modules-card" style="margin-top:20px;">
+        <h2>Financial Literacy Modules</h2>
         <ul class="module-list">
-          <li class="module-item">
-            <div class="module-icon icon-done">✓</div>
-            <div class="module-info">
-              <p class="module-title">Needs vs. Wants: The Gold Standard</p>
-              <p class="module-sub">Understanding core spend metrics before committing savings plans.</p>
-            </div>
-            <div class="module-right">
-              <span class="tag tag-purple">Need Guard Expert</span>
-              <span class="module-status">100% Completed</span>
-            </div>
-          </li>
-
-          <li class="module-item">
-            <div class="module-icon icon-book">📖</div>
-            <div class="module-info">
-              <p class="module-title">Spotting the Trap: Internet Scams &amp; Security</p>
-              <p class="module-sub">Protect cards, avoid phishy links, and passwords locked away.</p>
-            </div>
-            <div class="module-right">
-              <span class="tag tag-purple">Web Shield Apprentice</span>
-              <span class="module-status">60% Active</span>
-            </div>
-          </li>
-
-          <li class="module-item">
-            <div class="module-icon icon-book">📘</div>
-            <div class="module-info">
-              <p class="module-title">The Compound Growth Magic Engine</p>
-              <p class="module-sub">How visual goals grow over multiple allowance splits.</p>
-            </div>
-            <div class="module-right">
-              <span class="tag tag-purple">Savings Alchemist</span>
-              <span class="module-status">Not Started</span>
-            </div>
-          </li>
+          <!-- Rendered dynamically by client.js with Kids / Teens / Adults filter -->
+          <li style="padding:20px; color:#b8b0e0;">Loading modules...</li>
         </ul>
       </section>
     </div>
 
-    <div class="right-col">
+    <div class="right-col" style="flex:1;">
       <section class="card incentives-card">
-        <h3>Parent-Funded Incentives</h3>
-        <p class="muted small">Offer custom bonuses when kids achieve certification goals.</p>
-        <div class="active-bonus">Active Bonus: $10.00 for Web Shield Badge</div>
+        <h3>Interactive Certification</h3>
+        <p class="muted small">Complete core modules to earn badges and level up your financial mastery score.</p>
+        <div class="active-bonus">Active Level: Goal-First Certified</div>
       </section>
 
-      <section class="card certs-card">
-        <h3>Certifications Earned</h3>
+      <section class="card certs-card" style="margin-top:16px;">
+        <h3>Badges Earned</h3>
         <div class="cert-badges">
-          <span class="cert-badge cert-earned">🛡 Need Guard Expert</span>
-          <span class="cert-badge cert-incomplete">🔒 Fraud Fighter (Incomplete)</span>
+          <span class="cert-badge cert-earned">🛡️ Need Guard Expert</span>
+          <span class="cert-badge cert-earned">📈 Compound Alchemist</span>
+          <span class="cert-badge cert-incomplete">🔒 Scam Shield (Active)</span>
         </div>
       </section>
     </div>
 
+  </div>
+
+  <div class="disclaimer-banner">
+    ⚠️ <strong>Disclaimer:</strong> FinanceBuddy is a goal-planning and learning tool. All balances are simulated; no real money is held or moved.
   </div>
 
 </main>

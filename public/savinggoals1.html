@@ -3,8 +3,32 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FinanceBuddy — Savings Goals &amp; Milestones</title>
+<title>FinanceBuddy — Goals &amp; Milestones</title>
 <link rel="stylesheet" href="savings.css">
+<style>
+  .btn-outline {
+    background: linear-gradient(135deg, #7c5cff, #4f6bff);
+    color: #ffffff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .btn-outline:hover {
+    box-shadow: 0 4px 14px rgba(124, 92, 255, 0.4);
+  }
+  .disclaimer-banner {
+    background: rgba(15, 10, 45, 0.6);
+    border: 1px solid rgba(124, 92, 255, 0.25);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-top: 24px;
+    font-size: 11px;
+    color: #b8b0e0;
+    text-align: center;
+  }
+</style>
 </head>
 <body>
 
@@ -17,22 +41,23 @@
       </svg>
     </div>
     <div class="logo-text"><span class="light">Finance</span><span class="buddy">Buddy</span></div>
-    <span class="plan-badge">Child</span>
+    <span class="plan-badge">Goal-First</span>
   </div>
 
   <div class="nav-links">
-    <a href="#">Wallet</a>
-    <a href="#" class="active">Savings Goals</a>
-    <a href="#">Learning Hub</a>
-    <a href="#">Emergency Vault</a>
+    <a href="/dashboard">Overview</a>
+    <a href="/goals" class="active">Savings Goals</a>
+    <a href="/emergency">Emergency Vault</a>
+    <a href="/learning">Learning Hub</a>
+    <a href="/transactions">Transactions</a>
   </div>
 
   <div class="nav-right">
     <div class="user-info">
-      <span class="user-name">Sarah Jenkins</span>
-      <span class="user-role">Guardian Account</span>
+      <span class="user-name">User</span>
+      <span class="user-role">Active Account</span>
     </div>
-    <div class="avatar avatar-sarah">SJ</div>
+    <div class="avatar avatar-sarah">FB</div>
   </div>
 </nav>
 
@@ -40,105 +65,52 @@
 
   <div class="dashboard-header">
     <div class="title-row">
-      <h1>Savings Goals &amp; Milestones</h1>
-      <span class="badge badge-purple">Target Achieved: 80%</span>
+      <h1>Goals &amp; Milestones</h1>
+      <span class="badge badge-purple">Goal-Centered Wealth</span>
     </div>
-    <p class="muted">Empower Leo to track his dreams with structured milestones while preserving ultimate parental safeguard keys.</p>
+    <p class="muted">Create unlimited goals, track automated weekly requirements, celebrate 25/50/75/100% milestones, and protect your savings with self-discipline locks.</p>
   </div>
 
   <div class="grid-top">
 
-    <section class="card goals-card">
+    <section class="card goals-card" style="flex:2;">
       <div class="goals-header">
-        <h2>Active Long-Term Goals</h2>
-        <button class="btn-outline">+ Create Custom Goal</button>
+        <h2>Active Goals</h2>
+        <button class="btn-outline" id="btnCreateGoal">+ Create Custom Goal</button>
       </div>
 
-      <div class="goal-item goal-blue">
-        <div class="goal-top">
-          <div class="goal-left">
-            <div class="goal-icon">💻</div>
-            <div>
-              <p class="goal-title">Smart Coding Laptop</p>
-              <p class="goal-sub">Deadline: Dec 20, 2025 · AI Projected Goal Completion: <span class="healthy">Healthy</span></p>
-            </div>
-          </div>
-          <span class="goal-amount">$960.00 / $1,200.00 (80%)</span>
-        </div>
-        <div class="progress-track">
-          <div class="progress-fill fill-blue" style="width:80%"></div>
-        </div>
-        <div class="goal-footer">
-          <span class="lock-note">🔒 Withdrawal Safeguard Active: All release requests must be approved by parents.</span>
-          <a href="#" class="goal-link">View Contributions</a>
-        </div>
-      </div>
-
-      <div class="goal-item goal-green">
-        <div class="goal-top">
-          <div class="goal-left">
-            <div class="goal-icon">🏕️</div>
-            <div>
-              <p class="goal-title">Summer Camp Reservation</p>
-              <p class="goal-sub">Deadline: June 15, 2026 · Recurring: $15/week</p>
-            </div>
-          </div>
-          <span class="goal-amount">$150.00 / $450.00 (33%)</span>
-        </div>
-        <div class="progress-track">
-          <div class="progress-fill fill-green" style="width:33%"></div>
-        </div>
-        <div class="goal-footer">
-          <span class="lock-note">🔒 Parent approval required for early drawdown.</span>
-          <a href="#" class="goal-link link-green">Modify Goal</a>
-        </div>
+      <div id="fbGoalsDynamicList">
+        <!-- Rendered dynamically by client.js -->
+        <p style="padding:20px; color:#b8b0e0; text-align:center;">Loading your goals...</p>
       </div>
     </section>
 
-    <div class="right-col">
+    <div class="right-col" style="flex:1;">
       <section class="card guard-card">
         <div class="guard-header">
           <div class="guard-icon">🔒</div>
-          <h3>Withdrawal Guard</h3>
+          <h3>Self-Discipline Lock</h3>
         </div>
-        <p class="guard-text">To prevent spontaneous impulses, saving assets are strictly locked until completion of set target.</p>
+        <p class="guard-text">
+          Funds in a goal are reserved until you reach 100%. Early withdrawals require a reason, trigger a <strong>24-hour cooling-off period</strong>, and show how many days your goal gets delayed.
+        </p>
       </section>
 
-      <section class="card projections-card">
-        <h3>Milestone Projections</h3>
-        <p class="projections-text">At current chore speed and baseline allowance, Leo will unlock the Coding Laptop on November 12, 2025 (4 weeks ahead of schedule).</p>
+      <section class="card projections-card" style="margin-top:16px;">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+          <span style="font-size:20px;">🛒</span>
+          <h3 style="margin:0;">Round-Up Micro Savings</h3>
+        </div>
+        <p class="projections-text">
+          Every simulated card spend automatically rounds up to the nearest multiple, depositing the spare change right into your active goal!
+        </p>
       </section>
     </div>
 
   </div>
 
-  <div class="withdraw-header">
-    <div class="title-row">
-      <h2>Request withdrawal From Saving</h2>
-      <span class="badge badge-purple-light">30% More to save</span>
-    </div>
-    <p class="muted">Use your saved funds wisely for genuine reasons. You may have to upload bills as proof of genuine expense.</p>
-  </div>
-
-  <div class="reason-card">
-    <label for="reason">Reason of Withdrawal</label>
-    <input type="text" id="reason" placeholder="Provide a valid reason so that your parents may take decision accordingly.">
-  </div>
-
-  <div class="grid-bottom">
-    <section class="card plan-card">
-      <h3>Amount Needed</h3>
-      <p class="muted small">+ ADD AMOUNT</p>
-      <textarea placeholder="₹..."></textarea>
-    </section>
-
-    <section class="card upload-card">
-      <h3>Upload Bill</h3>
-      <div class="upload-buttons">
-        <button class="btn-upload">Choose File</button>
-        <button class="btn-upload">Upload Photo</button>
-      </div>
-    </section>
+  <div class="disclaimer-banner">
+    ⚠️ <strong>Disclaimer:</strong> FinanceBuddy is a goal-planning and learning tool. All balances are simulated; no real money is held or moved.
   </div>
 
 </main>
