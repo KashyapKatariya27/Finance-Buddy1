@@ -100,6 +100,33 @@ export const GoalWithdrawSchema = z.object({
 });
 export type GoalWithdrawInput = z.infer<typeof GoalWithdrawSchema>;
 
+export const ChoreCreateSchema = z.object({
+  title: z.string().min(2, "Title must be at least 2 characters").max(100),
+  description: z.string().max(300).default(""),
+  rewardAmount: z.union([z.string(), z.number()]).transform(v => Number(v)).refine(n => n > 0, "Reward must be positive"),
+  dueDate: z.string().optional(),
+  childId: z.number().int().positive()
+});
+export type ChoreCreateInput = z.infer<typeof ChoreCreateSchema>;
+
+export const ChoreSubmitSchema = z.object({
+  note: z.string().max(300).default("")
+});
+export type ChoreSubmitInput = z.infer<typeof ChoreSubmitSchema>;
+
+export const RequestCreateSchema = z.object({
+  amount: z.union([z.string(), z.number()]).transform(v => Number(v)).refine(n => n > 0, "Amount must be positive"),
+  reason: z.string().min(4, "Reason must be at least 4 characters").max(300),
+  type: z.enum(["allowance", "early_goal_withdrawal", "purchase_request", "emergency_drawdown"]).default("purchase_request"),
+  goalId: z.number().int().positive().optional()
+});
+export type RequestCreateInput = z.infer<typeof RequestCreateSchema>;
+
+export const RequestReviewSchema = z.object({
+  decision: z.enum(["approved", "declined"])
+});
+export type RequestReviewInput = z.infer<typeof RequestReviewSchema>;
+
 export const FinalizeCoolingOffSchema = z.object({
   simulate_bypass: z.boolean().optional().default(false)
 });

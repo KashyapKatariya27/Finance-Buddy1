@@ -10,9 +10,17 @@ export const FamilyManagePage: React.FC = () => {
   const [isFunding, setIsFunding] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
 
+  // Add Child Modal
+  const [isAddChildOpen, setIsAddChildOpen] = useState(false);
+  const [childName, setChildName] = useState("");
+  const [childEmail, setChildEmail] = useState("");
+  const [childPassword, setChildPassword] = useState("");
+  const [childAge, setChildAge] = useState(12);
+  const [isCreatingChild, setIsCreatingChild] = useState(false);
+
   const fetchChildren = async () => {
     try {
-      const res = await apiRequest("/api/family/children");
+      const res = await apiRequest("/api/children");
       setChildren(res.children || []);
     } catch (e) {
       console.error("Failed to load children:", e);
@@ -22,6 +30,33 @@ export const FamilyManagePage: React.FC = () => {
   useEffect(() => {
     fetchChildren();
   }, []);
+
+  const handleCreateChild = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsCreatingChild(true);
+    setStatusMsg(null);
+    try {
+      await apiRequest("/api/children", {
+        method: "POST",
+        body: JSON.stringify({
+          fullName: childName,
+          email: childEmail,
+          password: childPassword,
+          age: childAge
+        })
+      });
+      setStatusMsg(`Child account created for ${childName}!`);
+      setIsAddChildOpen(false);
+      setChildName("");
+      setChildEmail("");
+      setChildPassword("");
+      await fetchChildren();
+    } catch (err: any) {
+      alert(err.message || "Failed to create child account");
+    } finally {
+      setIsCreatingChild(false);
+    }
+  };
 
   const handleFundChild = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,6 +97,12 @@ export const FamilyManagePage: React.FC = () => {
             Supervise your children's goal milestones, fund allowances with auto-splits, and approve withdrawals
           </p>
         </div>
+        <button
+          onClick={() => setIsAddChildOpen(true)}
+          className="px-4 py-2.5 rounded-xl font-bold text-midnight-950 bg-gradient-to-r from-aurora-green to-aurora-cyan shadow-glow-sm hover:opacity-90 transition text-sm"
+        >
+          + Add Child Account
+        </button>
       </div>
 
       {statusMsg && (
@@ -160,6 +201,83 @@ export const FamilyManagePage: React.FC = () => {
                   className="px-5 py-2 rounded-xl text-xs font-bold text-midnight-950 bg-aurora-green hover:opacity-90 disabled:opacity-50"
                 >
                   {isFunding ? "Transferring..." : "Disburse Funds →"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Child Account Modal */}
+      {isAddChildOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-midnight-950/80 backdrop-blur-sm p-4">
+          <div className="max-w-md w-full bg-midnight-900 p-6 rounded-3xl border border-midnight-800 shadow-2xl space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-bold text-white">+ Create Child Account</h2>
+              <button onClick={() => setIsAddChildOpen(false)} className="text-slate-400 hover:text-white">✕</button>
+            </div>
+            <form onSubmit={handleCreateChild} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Child Name</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Maya Jenkins"
+                  value={childName}
+                  onChange={(e) => setChildName(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-midnight-950 border border-midnight-800 text-white text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Child Email</label>
+                <input
+                  type="email"
+                  required
+                  placeholder="maya@demo.com"
+                  value={childEmail}
+                  onChange={(e) => setChildEmail(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-midnight-950 border border-midnight-800 text-white text-sm"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Password</label>
+                  <input
+                    type="password"
+                    required
+                    minLength={6}
+                    value={childPassword}
+                    onChange={(e) => setChildPassword(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-midnight-950 border border-midnight-800 text-white text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Age</label>
+                  <input
+                    type="number"
+                    min={6}
+                    max={17}
+                    required
+                    value={childAge}
+                    onChange={(e) => setChildAge(parseInt(e.target.value, 10) || 10)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-midnight-950 border border-midnight-800 text-white text-sm"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setIsAddChildOpen(false)}
+                  className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isCreatingChild}
+                  className="px-5 py-2 rounded-xl text-xs font-bold text-midnight-950 bg-aurora-green hover:opacity-90 disabled:opacity-50"
+                >
+                  {isCreatingChild ? "Creating..." : "Create Account"}
                 </button>
               </div>
             </form>

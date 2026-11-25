@@ -1,5 +1,5 @@
 import { Router, Response } from "express";
-import { PlanSplitSchema, CurrencySchema, getPresetForAge, DISCLAIMER } from "@finance-buddy/shared";
+import { getPresetForAge, DISCLAIMER } from "@finance-buddy/shared";
 import db from "../db";
 import { requireAuth, AuthRequest } from "../middleware/auth";
 import { calculateGoalPacing, calculateEmergencyRunway } from "../utils/calculator";
@@ -8,12 +8,21 @@ export const dashboardRouter = Router();
 
 dashboardRouter.get("/", requireAuth, async (req: AuthRequest, res: Response) => {
   try {
-    const user = await db.user.findUnique({ where: { id: req.user!.id } });
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
+    const user = await db.user.findUnique({
+      where: { id: req.user!.id },
+      include: { wallet: true, plan: true }
+    });
+    if (!user) return res.status(404).json({ error: "User not found" });
 
-    // Active goals
+    const everydayCents = user.wallet?.everydayCents ?? 0;
+    const emergencyCents = user.wallet?.emergencyCents ?? 0;
+    const savingsCents = user.wallet?.savingsCents ?? 0;
+
+    const splitEveryday = user.plan?.splitEveryday ?? 50;
+    const splitEmergency = user.plan?.splitEmergency ?? 20;
+    const splitSavings = user.plan?.splitSavings ?? 30;
+    const monthlyExpensesCents = user.plan?.monthlyExpensesCents ?? 2000000;
+
     const goals = await db.goal.findMany({
       where: { userId: user.id, status: "active" }
     });
@@ -23,11 +32,9 @@ dashboardRouter.get("/", requireAuth, async (req: AuthRequest, res: Response) =>
       pacing: calculateGoalPacing(g)
     }));
 
-    // Emergency runway
-    const runway = calculateEmergencyRunway(user.emergencyCents, user.monthlyExpensesCents);
+    const runway = calculateEmergencyRunway(emergencyCents, monthlyExpensesCents);
 
-    // Incoming approvals (if this user is a parent or an accountability partner)
-    const incomingApprovals = await db.approval.findMany({
+    const incomingRequests = await db.request.findMany({
       where: {
         OR: [
           { parentId: user.id, status: "pending" },
@@ -36,20 +43,24 @@ dashboardRouter.get("/", requireAuth, async (req: AuthRequest, res: Response) =>
       }
     });
 
-    // Outgoing approvals or cooling-off locks
-    const outgoingApprovals = await db.approval.findMany({
-      where: {
-        childId: user.id
-      }
+    const outgoingRequests = await db.request.findMany({
+      where: { childId: user.id }
     });
 
-    // Recent transactions
     const recentTransactions = await db.transaction.findMany({
       where: { userId: user.id },
       take: 6
     });
 
-    const totalCents = user.everydayCents + user.emergencyCents + user.savingsCents;
+    const badges = await db.badge.findMany({
+      where: { userId: user.id }
+    });
+
+    const notifications = await db.notification.findMany({
+      where: { userId: user.id }
+    });
+
+    const totalCents = everydayCents + emergencyCents + savingsCents;
     const preset = getPresetForAge(user.age);
 
     return res.json({
@@ -64,92 +75,30 @@ dashboardRouter.get("/", requireAuth, async (req: AuthRequest, res: Response) =>
         streakDays: user.streakDays
       },
       balances: {
-        everydayCents: user.everydayCents,
-        emergencyCents: user.emergencyCents,
-        savingsCents: user.savingsCents,
+        everydayCents,
+        emergencyCents,
+        savingsCents,
         totalCents
       },
       split: {
-        everyday: user.splitEveryday,
-        emergency: user.splitEmergency,
-        savings: user.splitSavings,
+        everyday: splitEveryday,
+        emergency: splitEmergency,
+        savings: splitSavings,
         presetRecommendation: preset
       },
       runway,
       goals: enrichedGoals,
       approvals: {
-        incoming: incomingApprovals,
-        outgoing: outgoingApprovals
+        incoming: incomingRequests,
+        outgoing: outgoingRequests
       },
       recentTransactions,
+      badges,
+      notifications,
       disclaimer: DISCLAIMER
     });
   } catch (error: any) {
     console.error("Dashboard error:", error);
     return res.status(500).json({ error: error.message || "Failed to load dashboard" });
-  }
-});
-
-dashboardRouter.post("/plan-split", requireAuth, async (req: AuthRequest, res: Response) => {
-  try {
-    const parseResult = PlanSplitSchema.safeParse(req.body);
-    if (!parseResult.success) {
-      return res.status(400).json({ error: parseResult.error.errors[0]?.message || "Invalid split percentages" });
-    }
-
-    const { everyday, emergency, savings } = parseResult.data;
-
-    const updated = await db.user.update({
-      where: { id: req.user!.id },
-      data: {
-        splitEveryday: everyday,
-        splitEmergency: emergency,
-        splitSavings: savings
-      }
-    });
-
-    await db.appEvent.create({
-      data: {
-        userId: req.user!.id,
-        action: "plan_split_updated",
-        details: `Updated plan split to ${everyday}% Everyday, ${emergency}% Emergency, ${savings}% Savings`
-      }
-    });
-
-    return res.json({
-      success: true,
-      split: {
-        everyday: updated.splitEveryday,
-        emergency: updated.splitEmergency,
-        savings: updated.splitSavings
-      },
-      disclaimer: DISCLAIMER
-    });
-  } catch (error: any) {
-    return res.status(500).json({ error: error.message || "Failed to update split" });
-  }
-});
-
-dashboardRouter.post("/currency", requireAuth, async (req: AuthRequest, res: Response) => {
-  try {
-    const parseResult = CurrencySchema.safeParse(req.body);
-    if (!parseResult.success) {
-      return res.status(400).json({ error: "Invalid currency. Must be INR or USD" });
-    }
-
-    const { currency } = parseResult.data;
-
-    const updated = await db.user.update({
-      where: { id: req.user!.id },
-      data: { currency }
-    });
-
-    return res.json({
-      success: true,
-      currency: updated.currency,
-      disclaimer: DISCLAIMER
-    });
-  } catch (error: any) {
-    return res.status(500).json({ error: error.message || "Failed to update currency" });
   }
 });

@@ -86,6 +86,20 @@ export const Navbar: React.FC = () => {
               Ledger
             </Link>
 
+            {/* Role specific: Chores only for PARENT or CHILD */}
+            {(user.role === "PARENT" || user.role === "CHILD") && (
+              <Link
+                to="/chores"
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  isActive("/chores")
+                    ? "bg-midnight-800 text-aurora-cyan border border-aurora-cyan/30"
+                    : "text-slate-300 hover:text-white hover:bg-midnight-900"
+                }`}
+              >
+                Chores
+              </Link>
+            )}
+
             {/* Role specific: Family link only for PARENT */}
             {user.role === "PARENT" && (
               <Link

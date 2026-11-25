@@ -1,5 +1,5 @@
 import http from "http";
-import { app } from "../src/index";
+import { app } from "../src/app";
 import { DISCLAIMER } from "@finance-buddy/shared";
 
 interface TestContext {
@@ -156,7 +156,7 @@ async function runTests() {
 
     // TEST 5: Currency Switching
     console.log("👉 Test 5: Currency switching (INR <-> USD)...");
-    const currSwitch = await request(baseUrl, "/api/dashboard/currency", {
+    const currSwitch = await request(baseUrl, "/api/wallet/currency", {
       method: "POST",
       body: { currency: "USD" },
       token: karanToken
@@ -239,7 +239,7 @@ async function runTests() {
       token: karanToken
     });
     assert(finalizeCooling.status === 200, "Cooling-off finalization should succeed");
-    assert(finalizeCooling.data.approval.status === "completed", "Approval status should be completed");
+    assert(finalizeCooling.data.request.status === "completed", "Request status should be completed");
     console.log("  ✓ Cooling-off period finalized and funds disbursed");
 
     // TEST 11: Teen Mode Accountability Partner Approval
@@ -278,7 +278,7 @@ async function runTests() {
       token: sarahToken
     });
     assert(reviewRes.status === 200, "Parent review should succeed");
-    assert(reviewRes.data.approval.status === "approved", "Approval status should be approved");
+    assert(reviewRes.data.request.status === "approved", "Approval status should be approved");
     console.log("  ✓ Parent reviewed and approved child withdrawal");
 
     // TEST 13: Learning Hub & Streak Extension

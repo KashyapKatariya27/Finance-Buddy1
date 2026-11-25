@@ -170,6 +170,20 @@ yarn start
 ```
 The server serves the compiled React 18 client directly from `client/dist` at `http://localhost:5000`.
 
+---
+
+## ☁️ Deploying on Render (One-Click Blueprint)
+
+1. Connect your GitHub repository to **Render** -> **Blueprints** -> **New Blueprint Instance**.
+2. Render automatically detects `render.yaml` and provisions:
+   - **Web Service (`finance-buddy`)**: Runs `npm install && npm run build` and starts with `npm run migrate && npm start`, exposing `/api/health`.
+   - **PostgreSQL Database (`finance-buddy-db`)**: Automatically wired to `DATABASE_URL`.
+3. Set optional environment variables in Render Dashboard:
+   - `CLIENT_URL`: Your Render app URL (e.g. `https://finance-buddy.onrender.com`).
+   - `AI_API_KEY`: Optional Groq / OpenAI key for LLM-powered financial coaching (automatic rule-based fallback if omitted).
+4. **First-load Note (Free Tier)**: Render's free web service spins down after 15 minutes of inactivity; the first request may take ~30 seconds to cold-start.
+5. **File Uploads & Ephemeral Disk Note**: Render's local disk is ephemeral across deploys and restarts. Uploaded bills and chore proofs currently use `LocalStorageProvider` (`server/src/utils/storage.ts`). For persistent production file storage, swap in a `CloudinaryStorageProvider` or `S3StorageProvider` implementing the `StorageProvider` interface.
+
 ## 🚀 Running Locally
 
 **Prerequisites:** Node.js **22.5.0** or higher.

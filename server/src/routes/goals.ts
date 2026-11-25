@@ -12,25 +12,19 @@ import { calculateGoalPacing, calculateEarlyWithdrawalDelay } from "../utils/cal
 
 export const goalsRouter = Router();
 
-// GET all goals for current user
 goalsRouter.get("/", requireAuth, async (req: AuthRequest, res: Response) => {
   try {
-    const goals = await db.goal.findMany({
-      where: { userId: req.user!.id }
-    });
-
+    const goals = await db.goal.findMany({ where: { userId: req.user!.id } });
     const enriched = goals.map((g: any) => ({
       ...g,
       pacing: calculateGoalPacing(g)
     }));
-
     return res.json({ goals: enriched, disclaimer: DISCLAIMER });
   } catch (error: any) {
     return res.status(500).json({ error: error.message || "Failed to fetch goals" });
   }
 });
 
-// POST create a new goal
 goalsRouter.post("/", requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const parseResult = GoalCreateSchema.safeParse(req.body);
@@ -62,19 +56,8 @@ goalsRouter.post("/", requireAuth, async (req: AuthRequest, res: Response) => {
       }
     });
 
-    await db.appEvent.create({
-      data: {
-        userId: req.user!.id,
-        action: "goal_created",
-        details: `Created goal "${goal.name}" targeting ${goal.targetCents / 100} by ${goal.deadline}`
-      }
-    });
-
     return res.status(201).json({
-      goal: {
-        ...goal,
-        pacing: calculateGoalPacing(goal)
-      },
+      goal: { ...goal, pacing: calculateGoalPacing(goal) },
       disclaimer: DISCLAIMER
     });
   } catch (error: any) {
@@ -82,7 +65,6 @@ goalsRouter.post("/", requireAuth, async (req: AuthRequest, res: Response) => {
   }
 });
 
-// POST deposit into goal
 goalsRouter.post("/:id/deposit", requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const goalId = parseInt(req.params.id, 10);
@@ -98,64 +80,72 @@ goalsRouter.post("/:id/deposit", requireAuth, async (req: AuthRequest, res: Resp
     }
 
     const depositCents = Math.round(parseResult.data.amount * 100);
-    const user = await db.user.findUnique({ where: { id: req.user!.id } });
+    const wallet = await db.wallet.findUnique({ where: { userId: req.user!.id } });
 
-    if (!user || user.everydayCents < depositCents) {
+    if (!wallet || wallet.everydayCents < depositCents) {
       return res.status(400).json({ error: "Insufficient balance in Everyday wallet to complete this deposit." });
     }
 
-    // Transfer from everyday to goal
-    const updatedUser = await db.user.update({
-      where: { id: user.id },
-      data: {
-        everydayCents: { decrement: depositCents },
-        savingsCents: { increment: depositCents }
-      }
-    });
-
-    const updatedGoal = await db.goal.update({
-      where: { id: goal.id },
-      data: {
-        currentCents: { increment: depositCents }
-      }
-    });
-
-    // Check if goal reached 100%
-    const pacing = calculateGoalPacing(updatedGoal);
-    if (pacing.percent >= 100 && updatedGoal.status === "active") {
-      await db.goal.update({
-        where: { id: updatedGoal.id },
-        data: { status: "completed" }
+    const result = await db.$transaction(async (tx: any) => {
+      const updatedWallet = await tx.wallet.update({
+        where: { userId: req.user!.id },
+        data: {
+          everydayCents: { decrement: depositCents },
+          savingsCents: { increment: depositCents }
+        }
       });
-      updatedGoal.status = "completed";
-    }
 
-    await db.transaction.create({
-      data: {
-        userId: user.id,
-        type: "goal_deposit",
-        amountCents: depositCents,
-        note: `Deposit into goal: "${updatedGoal.name}"`
-      }
-    });
+      let updatedGoal = await tx.goal.update({
+        where: { id: goal.id },
+        data: { currentCents: { increment: depositCents } }
+      });
 
-    await db.appEvent.create({
-      data: {
-        userId: user.id,
-        action: "goal_deposit",
-        details: `Saved ${depositCents / 100} to goal "${updatedGoal.name}". Progress: ${pacing.percent}%`
+      const pacing = calculateGoalPacing(updatedGoal);
+      if (pacing.percent >= 100 && updatedGoal.status === "active") {
+        updatedGoal = await tx.goal.update({
+          where: { id: updatedGoal.id },
+          data: { status: "completed" }
+        });
+        await tx.badge.upsert({
+          where: { userId_name: { userId: req.user!.id, name: `Achieved: ${updatedGoal.name}` } },
+          update: {},
+          create: {
+            userId: req.user!.id,
+            name: `Achieved: ${updatedGoal.name}`,
+            description: `Reached 100% of goal ${updatedGoal.name}`,
+            icon: "🏆"
+          }
+        });
       }
+
+      await tx.goalDeposit.create({
+        data: {
+          goalId: updatedGoal.id,
+          userId: req.user!.id,
+          amountCents: depositCents,
+          note: `Manual deposit to "${updatedGoal.name}"`
+        }
+      });
+
+      await tx.transaction.create({
+        data: {
+          userId: req.user!.id,
+          walletType: "savings",
+          type: "goal_deposit",
+          amountCents: depositCents,
+          note: `Deposit into goal: "${updatedGoal.name}"`
+        }
+      });
+
+      return { updatedWallet, updatedGoal, pacing };
     });
 
     return res.json({
       success: true,
-      goal: {
-        ...updatedGoal,
-        pacing
-      },
+      goal: { ...result.updatedGoal, pacing: result.pacing },
       userBalances: {
-        everydayCents: updatedUser.everydayCents,
-        savingsCents: updatedUser.savingsCents
+        everydayCents: result.updatedWallet.everydayCents,
+        savingsCents: result.updatedWallet.savingsCents
       },
       disclaimer: DISCLAIMER
     });
@@ -164,7 +154,6 @@ goalsRouter.post("/:id/deposit", requireAuth, async (req: AuthRequest, res: Resp
   }
 });
 
-// POST simulate spend and round-up micro-savings
 goalsRouter.post("/:id/simulate-spend", requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const goalId = parseInt(req.params.id, 10);
@@ -181,66 +170,73 @@ goalsRouter.post("/:id/simulate-spend", requireAuth, async (req: AuthRequest, re
 
     const { spendAmount, note } = parseResult.data;
     const spendCents = Math.round(spendAmount * 100);
-
-    // Round up calculation: round to the nearest whole rupee/dollar (100 cents)
     const remainder = spendCents % 100;
     const roundUpCents = remainder === 0 ? 0 : 100 - remainder;
     const totalDeductionCents = spendCents + roundUpCents;
 
-    const user = await db.user.findUnique({ where: { id: req.user!.id } });
-    if (!user || user.everydayCents < totalDeductionCents) {
+    const wallet = await db.wallet.findUnique({ where: { userId: req.user!.id } });
+    if (!wallet || wallet.everydayCents < totalDeductionCents) {
       return res.status(400).json({ error: "Insufficient Everyday balance for purchase and round-up." });
     }
 
-    // Deduct total from everyday; add roundUpCents to savings and goal
-    const updatedUser = await db.user.update({
-      where: { id: user.id },
-      data: {
-        everydayCents: { decrement: totalDeductionCents },
-        savingsCents: { increment: roundUpCents }
-      }
-    });
-
-    const updatedGoal = await db.goal.update({
-      where: { id: goal.id },
-      data: {
-        currentCents: { increment: roundUpCents }
-      }
-    });
-
-    await db.transaction.create({
-      data: {
-        userId: user.id,
-        type: "card_purchase",
-        amountCents: spendCents,
-        note: `${note} (-${(spendCents / 100).toFixed(2)})`
-      }
-    });
-
-    if (roundUpCents > 0) {
-      await db.transaction.create({
+    const result = await db.$transaction(async (tx: any) => {
+      const updatedWallet = await tx.wallet.update({
+        where: { userId: req.user!.id },
         data: {
-          userId: user.id,
-          type: "round_up_save",
-          amountCents: roundUpCents,
-          note: `Spare change round-up into "${updatedGoal.name}" (+${(roundUpCents / 100).toFixed(2)})`
+          everydayCents: { decrement: totalDeductionCents },
+          savingsCents: { increment: roundUpCents }
         }
       });
-    }
 
-    const pacing = calculateGoalPacing(updatedGoal);
+      const updatedGoal = await tx.goal.update({
+        where: { id: goal.id },
+        data: { currentCents: { increment: roundUpCents } }
+      });
+
+      await tx.transaction.create({
+        data: {
+          userId: req.user!.id,
+          walletType: "everyday",
+          type: "card_purchase",
+          amountCents: spendCents,
+          note: `${note} (-${(spendCents / 100).toFixed(2)})`
+        }
+      });
+
+      if (roundUpCents > 0) {
+        await tx.goalDeposit.create({
+          data: {
+            goalId: updatedGoal.id,
+            userId: req.user!.id,
+            amountCents: roundUpCents,
+            note: `Round-up from "${note}"`
+          }
+        });
+
+        await tx.transaction.create({
+          data: {
+            userId: req.user!.id,
+            walletType: "savings",
+            type: "round_up_save",
+            amountCents: roundUpCents,
+            note: `Spare change round-up into "${updatedGoal.name}" (+${(roundUpCents / 100).toFixed(2)})`
+          }
+        });
+      }
+
+      return { updatedWallet, updatedGoal };
+    });
+
+    const pacing = calculateGoalPacing(result.updatedGoal);
 
     return res.json({
       success: true,
       spendAmount: spendCents / 100,
       roundUpAmount: roundUpCents / 100,
-      goal: {
-        ...updatedGoal,
-        pacing
-      },
+      goal: { ...result.updatedGoal, pacing },
       userBalances: {
-        everydayCents: updatedUser.everydayCents,
-        savingsCents: updatedUser.savingsCents
+        everydayCents: result.updatedWallet.everydayCents,
+        savingsCents: result.updatedWallet.savingsCents
       },
       disclaimer: DISCLAIMER
     });
@@ -249,7 +245,6 @@ goalsRouter.post("/:id/simulate-spend", requireAuth, async (req: AuthRequest, re
   }
 });
 
-// POST withdraw from goal (Completed vs Early Withdrawal)
 goalsRouter.post("/:id/withdraw", requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const goalId = parseInt(req.params.id, 10);
@@ -276,50 +271,46 @@ goalsRouter.post("/:id/withdraw", requireAuth, async (req: AuthRequest, res: Res
 
     const isFullyCompleted = goal.currentCents >= goal.targetCents || goal.status === "completed";
 
-    // 1. Fully Completed Goal: Instant payout!
     if (isFullyCompleted) {
-      await db.user.update({
-        where: { id: user.id },
-        data: {
-          everydayCents: { increment: withdrawCents },
-          savingsCents: { decrement: withdrawCents }
-        }
-      });
+      const updatedGoal = await db.$transaction(async (tx: any) => {
+        await tx.wallet.update({
+          where: { userId: user.id },
+          data: {
+            everydayCents: { increment: withdrawCents },
+            savingsCents: { decrement: withdrawCents }
+          }
+        });
 
-      const updatedGoal = await db.goal.update({
-        where: { id: goal.id },
-        data: {
-          currentCents: { decrement: withdrawCents },
-          status: "completed"
-        }
-      });
+        const g = await tx.goal.update({
+          where: { id: goal.id },
+          data: { currentCents: { decrement: withdrawCents }, status: "completed" }
+        });
 
-      await db.transaction.create({
-        data: {
-          userId: user.id,
-          type: "goal_completed_payout",
-          amountCents: withdrawCents,
-          note: `Payout from completed goal: "${goal.name}"`
-        }
+        await tx.transaction.create({
+          data: {
+            userId: user.id,
+            walletType: "everyday",
+            type: "goal_completed_payout",
+            amountCents: withdrawCents,
+            note: `Payout from completed goal: "${goal.name}"`
+          }
+        });
+
+        return g;
       });
 
       return res.json({
         status: "instant_completed",
         message: "🎉 Congratulations! Funds successfully transferred to your Everyday wallet.",
-        goal: {
-          ...updatedGoal,
-          pacing: calculateGoalPacing(updatedGoal)
-        },
+        goal: { ...updatedGoal, pacing: calculateGoalPacing(updatedGoal) },
         disclaimer: DISCLAIMER
       });
     }
 
-    // 2. Early Withdrawal: Self-discipline lock & Approval logic
     const { delayDays, delayMessage } = calculateEarlyWithdrawalDelay(goal, withdrawCents);
 
-    // A. Family Mode or Child role -> requires Parent approval
     if (user.accountMode === "FAMILY" || user.role === "CHILD") {
-      const approval = await db.approval.create({
+      const reqRecord = await db.request.create({
         data: {
           childId: user.id,
           parentId: user.parentId,
@@ -327,7 +318,6 @@ goalsRouter.post("/:id/withdraw", requireAuth, async (req: AuthRequest, res: Res
           reason,
           status: "pending",
           goalId: goal.id,
-          coolingOff: false,
           delayDays,
           type: "early_goal_withdrawal"
         }
@@ -338,14 +328,14 @@ goalsRouter.post("/:id/withdraw", requireAuth, async (req: AuthRequest, res: Res
         message: "Early withdrawal request submitted to your parent for approval.",
         delayDays,
         delayMessage,
-        approvalId: approval.id,
+        requestId: reqRecord.id,
+        approvalId: reqRecord.id,
         disclaimer: DISCLAIMER
       });
     }
 
-    // B. Teen / Student Mode with Accountability Partner -> partner approval
     if (user.accountMode === "TEEN" && user.accountabilityPartnerEmail) {
-      const approval = await db.approval.create({
+      const reqRecord = await db.request.create({
         data: {
           childId: user.id,
           partnerEmail: user.accountabilityPartnerEmail,
@@ -353,7 +343,6 @@ goalsRouter.post("/:id/withdraw", requireAuth, async (req: AuthRequest, res: Res
           reason,
           status: "pending",
           goalId: goal.id,
-          coolingOff: false,
           delayDays,
           type: "early_goal_withdrawal"
         }
@@ -364,16 +353,14 @@ goalsRouter.post("/:id/withdraw", requireAuth, async (req: AuthRequest, res: Res
         message: `Early withdrawal request sent to accountability partner (${user.accountabilityPartnerEmail}) for verification.`,
         delayDays,
         delayMessage,
-        approvalId: approval.id,
+        requestId: reqRecord.id,
+        approvalId: reqRecord.id,
         disclaimer: DISCLAIMER
       });
     }
 
-    // C. Myself Mode -> 24-hour self-discipline cooling-off period
-    const now = new Date();
-    const unlockAt = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours from now
-
-    const approval = await db.approval.create({
+    const unlockAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const reqRecord = await db.request.create({
       data: {
         childId: user.id,
         amountCents: withdrawCents,
@@ -381,7 +368,6 @@ goalsRouter.post("/:id/withdraw", requireAuth, async (req: AuthRequest, res: Res
         status: "cooling_off",
         goalId: goal.id,
         unlockAt,
-        coolingOff: true,
         delayDays,
         type: "early_goal_withdrawal"
       }
@@ -394,7 +380,8 @@ goalsRouter.post("/:id/withdraw", requireAuth, async (req: AuthRequest, res: Res
       coolingOffRemainingMs: 24 * 60 * 60 * 1000,
       delayDays,
       delayMessage,
-      approvalId: approval.id,
+      requestId: reqRecord.id,
+      approvalId: reqRecord.id,
       disclaimer: DISCLAIMER
     });
   } catch (error: any) {
@@ -402,7 +389,6 @@ goalsRouter.post("/:id/withdraw", requireAuth, async (req: AuthRequest, res: Res
   }
 });
 
-// DELETE goal
 goalsRouter.delete("/:id", requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const goalId = parseInt(req.params.id, 10);
@@ -412,18 +398,29 @@ goalsRouter.delete("/:id", requireAuth, async (req: AuthRequest, res: Response) 
       return res.status(404).json({ error: "Goal not found" });
     }
 
-    // Refund any saved balance back to everyday
-    if (goal.currentCents > 0) {
-      await db.user.update({
-        where: { id: req.user!.id },
-        data: {
-          everydayCents: { increment: goal.currentCents },
-          savingsCents: { decrement: goal.currentCents }
-        }
-      });
-    }
+    await db.$transaction(async (tx: any) => {
+      if (goal.currentCents > 0) {
+        await tx.wallet.update({
+          where: { userId: req.user!.id },
+          data: {
+            everydayCents: { increment: goal.currentCents },
+            savingsCents: { decrement: goal.currentCents }
+          }
+        });
 
-    await db.goal.delete({ where: { id: goalId } });
+        await tx.transaction.create({
+          data: {
+            userId: req.user!.id,
+            walletType: "everyday",
+            type: "goal_cancelled_refund",
+            amountCents: goal.currentCents,
+            note: `Refund from deleted goal: "${goal.name}"`
+          }
+        });
+      }
+
+      await tx.goal.delete({ where: { id: goalId } });
+    });
 
     return res.json({ success: true, message: "Goal deleted and funds refunded to Everyday wallet", disclaimer: DISCLAIMER });
   } catch (error: any) {

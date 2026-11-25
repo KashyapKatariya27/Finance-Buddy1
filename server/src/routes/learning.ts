@@ -23,7 +23,6 @@ export interface LessonModule {
 }
 
 export const MODULES: LessonModule[] = [
-  // Kids (6-12)
   {
     id: "kids-1",
     level: "Kids",
@@ -56,8 +55,6 @@ export const MODULES: LessonModule[] = [
       explanation: "The Save jar lets your money wait until you have enough for your biggest dreams!"
     }
   },
-
-  // Teens (13-17)
   {
     id: "teens-1",
     level: "Teens",
@@ -90,8 +87,6 @@ export const MODULES: LessonModule[] = [
       explanation: "Banks and legitimate services NEVER ask for your private OTP or passwords!"
     }
   },
-
-  // Adults (18+)
   {
     id: "adults-1",
     level: "Adults",
@@ -142,20 +137,15 @@ export const MODULES: LessonModule[] = [
   }
 ];
 
-// GET learning modules and user completion status
 learningRouter.get("/", requireAuth, async (req: AuthRequest, res: Response) => {
   try {
-    const user = req.user!;
-    const progressList = await db.learningProgress.findMany({
-      where: { userId: user.id }
-    });
+    const user = await db.user.findUnique({ where: { id: req.user!.id } });
+    const progressList = await db.lessonProgress.findMany({ where: { userId: req.user!.id } });
+    const completedSet = new Set(progressList.filter((p: any) => p.completed).map((p: any) => p.lessonId));
 
-    const completedSet = new Set(progressList.filter((p: any) => p.completed).map((p: any) => p.moduleId));
-
-    // Determine default level filter based on user age
     let defaultLevel: "Kids" | "Teens" | "Adults" = "Adults";
-    if (user.age < 13) defaultLevel = "Kids";
-    else if (user.age < 18) defaultLevel = "Teens";
+    if ((user?.age ?? 25) < 13) defaultLevel = "Kids";
+    else if ((user?.age ?? 25) < 18) defaultLevel = "Teens";
 
     const modulesWithStatus = MODULES.map(m => ({
       ...m,
@@ -165,7 +155,7 @@ learningRouter.get("/", requireAuth, async (req: AuthRequest, res: Response) => 
     return res.json({
       defaultLevel,
       modules: modulesWithStatus,
-      streakDays: user.age ? (await db.user.findUnique({ where: { id: user.id } }))?.streakDays || 1 : 1,
+      streakDays: user?.streakDays || 1,
       disclaimer: DISCLAIMER
     });
   } catch (error: any) {
@@ -173,7 +163,6 @@ learningRouter.get("/", requireAuth, async (req: AuthRequest, res: Response) => 
   }
 });
 
-// POST complete module and earn simulated reward & streak
 learningRouter.post("/complete", requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { moduleId, answerIndex } = req.body;
@@ -183,8 +172,7 @@ learningRouter.post("/complete", requireAuth, async (req: AuthRequest, res: Resp
       return res.status(404).json({ error: "Module not found" });
     }
 
-    const isCorrect = answerIndex === targetModule.quiz.correctIndex;
-    if (!isCorrect) {
+    if (answerIndex !== targetModule.quiz.correctIndex) {
       return res.status(400).json({
         correct: false,
         message: "Incorrect answer. Review the hint and try again!",
@@ -192,41 +180,46 @@ learningRouter.post("/complete", requireAuth, async (req: AuthRequest, res: Resp
       });
     }
 
-    // Mark completed
-    await db.learningProgress.upsert({
-      where: {
-        userId_moduleId: {
+    const newStreak = await db.$transaction(async (tx: any) => {
+      await tx.lessonProgress.upsert({
+        where: {
+          userId_lessonId: {
+            userId: req.user!.id,
+            lessonId: moduleId
+          }
+        },
+        update: { completed: true },
+        create: {
           userId: req.user!.id,
-          moduleId
+          lessonId: moduleId,
+          completed: true
         }
-      },
-      update: { completed: true },
-      create: {
-        userId: req.user!.id,
-        moduleId,
-        completed: true
-      }
-    });
+      });
 
-    // Credit reward and increment streak
-    const user = await db.user.findUnique({ where: { id: req.user!.id } });
-    const newStreak = (user?.streakDays || 1) + 1;
+      const user = await tx.user.findUnique({ where: { id: req.user!.id } });
+      const streak = (user?.streakDays || 1) + 1;
 
-    await db.user.update({
-      where: { id: req.user!.id },
-      data: {
-        everydayCents: { increment: targetModule.rewardCents },
-        streakDays: newStreak
-      }
-    });
+      await tx.user.update({
+        where: { id: req.user!.id },
+        data: { streakDays: streak }
+      });
 
-    await db.transaction.create({
-      data: {
-        userId: req.user!.id,
-        type: "learning_reward",
-        amountCents: targetModule.rewardCents,
-        note: `Knowledge Reward: Completed "${targetModule.title}"`
-      }
+      await tx.wallet.update({
+        where: { userId: req.user!.id },
+        data: { everydayCents: { increment: targetModule.rewardCents } }
+      });
+
+      await tx.transaction.create({
+        data: {
+          userId: req.user!.id,
+          walletType: "everyday",
+          type: "learning_reward",
+          amountCents: targetModule.rewardCents,
+          note: `Knowledge Reward: Completed "${targetModule.title}"`
+        }
+      });
+
+      return streak;
     });
 
     return res.json({
