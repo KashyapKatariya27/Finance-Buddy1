@@ -1,0 +1,276 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  PARENT
+  CHILD
+  INDIVIDUAL
+}
+
+enum AccountMode {
+  FAMILY
+  MYSELF
+  TEEN
+}
+
+enum GoalCategory {
+  education
+  gadget
+  travel
+  emergency
+  business
+  health
+  wedding
+  home
+  other
+}
+
+enum GoalPriority {
+  low
+  medium
+  high
+}
+
+enum GoalStatus {
+  active
+  completed
+  cancelled
+}
+
+enum RequestStatus {
+  pending
+  cooling_off
+  approved
+  declined
+  completed
+}
+
+enum RequestType {
+  allowance
+  early_goal_withdrawal
+  purchase_request
+  emergency_drawdown
+}
+
+enum ChoreStatus {
+  pending
+  submitted
+  approved
+  rejected
+}
+
+model User {
+  id                         Int                @id @default(autoincrement())
+  fullName                   String
+  email                      String             @unique
+  passwordHash               String
+  role                       Role               @default(INDIVIDUAL)
+  accountMode                AccountMode        @default(FAMILY)
+  age                        Int                @default(25)
+  currency                   String             @default("INR")
+  parentId                   Int?
+  parent                     User?              @relation("FamilyChildren", fields: [parentId], references: [id])
+  children                   User[]             @relation("FamilyChildren")
+  accountabilityPartnerEmail String?
+  streakDays                 Int                @default(1)
+  createdAt                  DateTime           @default(now())
+  updatedAt                  DateTime           @updatedAt
+
+  wallet                     Wallet?
+  plan                       Plan?
+  goals                      Goal[]
+  goalDeposits               GoalDeposit[]
+  assignedChores             Chore[]            @relation("AssignedChores")
+  parentChores               Chore[]            @relation("ParentChores")
+  choreSubmissions           ChoreSubmission[]
+  transactions               Transaction[]
+  outgoingRequests           Request[]          @relation("ChildRequests")
+  reviewedRequests           Request[]          @relation("ReviewerRequests")
+  lessonProgress             LessonProgress[]
+  badges                     Badge[]
+  notifications              Notification[]
+
+  @@index([email])
+  @@index([parentId])
+}
+
+model Wallet {
+  id             Int      @id @default(autoincrement())
+  userId         Int      @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  everydayCents  Int      @default(0)
+  savingsCents   Int      @default(0)
+  emergencyCents Int      @default(0)
+  updatedAt      DateTime @updatedAt
+}
+
+model Plan {
+  id                   Int      @id @default(autoincrement())
+  userId               Int      @unique
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  splitEveryday        Int      @default(50)
+  splitEmergency       Int      @default(20)
+  splitSavings         Int      @default(30)
+  monthlyExpensesCents Int      @default(2000000) // 20,000.00
+  updatedAt            DateTime @updatedAt
+}
+
+model Goal {
+  id                Int           @id @default(autoincrement())
+  userId            Int
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name              String
+  category          GoalCategory  @default(other)
+  targetCents       Int
+  currentCents      Int           @default(0)
+  deadline          String
+  priority          GoalPriority  @default(medium)
+  icon              String        @default("🎯")
+  status            GoalStatus    @default(active)
+  autoSaveCents     Int           @default(0)
+  autoSaveFrequency String        @default("none")
+  roundUpEnabled    Boolean       @default(false)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  deposits          GoalDeposit[]
+  requests          Request[]
+
+  @@index([userId, status])
+}
+
+model GoalDeposit {
+  id          Int      @id @default(autoincrement())
+  goalId      Int
+  goal        Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amountCents Int
+  note        String   @default("")
+  createdAt   DateTime @default(now())
+}
+
+model Chore {
+  id          Int               @id @default(autoincrement())
+  parentId    Int
+  parent      User              @relation("ParentChores", fields: [parentId], references: [id])
+  childId     Int
+  child       User              @relation("AssignedChores", fields: [childId], references: [id], onDelete: Cascade)
+  title       String
+  description String            @default("")
+  rewardCents Int
+  status      ChoreStatus       @default(pending)
+  dueDate     String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  submissions ChoreSubmission[]
+}
+
+model ChoreSubmission {
+  id          Int      @id @default(autoincrement())
+  choreId     Int
+  chore       Chore    @relation(fields: [choreId], references: [id], onDelete: Cascade)
+  childId     Int
+  child       User     @relation(fields: [childId], references: [id], onDelete: Cascade)
+  note        String   @default("")
+  fileUrl     String?
+  submittedAt DateTime @default(now())
+}
+
+model Transaction {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  walletType  String   @default("everyday") // everyday, savings, emergency
+  type        String
+  amountCents Int
+  note        String
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
+}
+
+model Request {
+  id           Int           @id @default(autoincrement())
+  childId      Int
+  child        User          @relation("ChildRequests", fields: [childId], references: [id], onDelete: Cascade)
+  parentId     Int?
+  partnerEmail String?
+  amountCents  Int
+  reason       String
+  billFile     String?
+  status       RequestStatus @default(pending)
+  reviewedById Int?
+  reviewedBy   User?         @relation("ReviewerRequests", fields: [reviewedById], references: [id])
+  goalId       Int?
+  goal         Goal?         @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  unlockAt     DateTime?
+  delayDays    Int           @default(0)
+  type         RequestType   @default(allowance)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([childId, status])
+  @@index([parentId, status])
+  @@index([partnerEmail, status])
+}
+
+model Lesson {
+  id              String           @id
+  level           String           // Kids, Teens, Adults
+  title           String
+  summary         String
+  durationMinutes Int
+  rewardCents     Int
+  category        String
+  icon            String           @default("📚")
+  quizQuestion    String
+  quizOptions     String[]
+  correctIndex    Int
+  explanation     String
+
+  progress        LessonProgress[]
+}
+
+model LessonProgress {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId    String
+  lesson      Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  completed   Boolean  @default(false)
+  completedAt DateTime @default(now())
+
+  @@unique([userId, lessonId])
+}
+
+model Badge {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  description String
+  icon        String   @default("🏆")
+  unlockedAt  DateTime @default(now())
+
+  @@unique([userId, name])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
+}
