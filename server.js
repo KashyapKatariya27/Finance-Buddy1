@@ -190,64 +190,82 @@ async function matches(password, stored) {
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
-async function seedDemoAccounts() {
-  const count = db.prepare("SELECT COUNT(*) as count FROM users").get().count;
-  if (count > 0) return;
+let seedingPromise = null;
+function seedDemoAccounts() {
+  if (seedingPromise) return seedingPromise;
+  seedingPromise = (async () => {
+    const count = db.prepare("SELECT COUNT(*) as count FROM users").get().count;
+    if (count > 0) return;
 
-  const defaultPasswordHash = await hash("password123");
+    const defaultPasswordHash = await hash("password123");
 
-  // 1. Sarah Jenkins (Family Parent)
-  const sarahResult = db.prepare(`
-    INSERT INTO users (full_name, email, password_hash, role, account_mode, age, everyday_cents, emergency_cents, savings_cents, split_everyday, split_emergency, split_savings, currency, monthly_expenses_cents)
-    VALUES (?, ?, ?, 'parent', 'family', 38, 5000000, 15000000, 8000000, 50, 30, 20, 'INR', 4000000)
-  `).run("Sarah Jenkins", "sarah@example.com", defaultPasswordHash);
-  const sarahId = sarahResult.lastInsertRowid;
+    // 1. Sarah Jenkins (Family Parent)
+    const existingSarah = db.prepare("SELECT id FROM users WHERE email = ?").get("sarah@example.com");
+    let sarahId = existingSarah?.id;
+    if (!sarahId) {
+      const sarahResult = db.prepare(`
+        INSERT INTO users (full_name, email, password_hash, role, account_mode, age, everyday_cents, emergency_cents, savings_cents, split_everyday, split_emergency, split_savings, currency, monthly_expenses_cents)
+        VALUES (?, ?, ?, 'parent', 'family', 38, 5000000, 15000000, 8000000, 50, 30, 20, 'INR', 4000000)
+      `).run("Sarah Jenkins", "sarah@example.com", defaultPasswordHash);
+      sarahId = sarahResult.lastInsertRowid;
+    }
 
-  // 2. Leo Jenkins (Family Child)
-  const leoResult = db.prepare(`
-    INSERT INTO users (full_name, email, password_hash, role, account_mode, age, parent_id, everyday_cents, emergency_cents, savings_cents, split_everyday, split_emergency, split_savings, currency, monthly_expenses_cents)
-    VALUES (?, ?, ?, 'child', 'family', 14, ?, 725000, 435000, 290000, 50, 30, 20, 'INR', 200000)
-  `).run("Leo Jenkins", "leo@example.com", defaultPasswordHash, sarahId);
-  const leoId = leoResult.lastInsertRowid;
+    // 2. Leo Jenkins (Family Child)
+    const existingLeo = db.prepare("SELECT id FROM users WHERE email = ?").get("leo@example.com");
+    let leoId = existingLeo?.id;
+    if (!leoId) {
+      const leoResult = db.prepare(`
+        INSERT INTO users (full_name, email, password_hash, role, account_mode, age, parent_id, everyday_cents, emergency_cents, savings_cents, split_everyday, split_emergency, split_savings, currency, monthly_expenses_cents)
+        VALUES (?, ?, ?, 'child', 'family', 14, ?, 725000, 435000, 290000, 50, 30, 20, 'INR', 200000)
+      `).run("Leo Jenkins", "leo@example.com", defaultPasswordHash, sarahId);
+      leoId = leoResult.lastInsertRowid;
 
-  // Goal for Leo: Coding Laptop (₹12,000, current ₹9,600 -> 80%)
-  db.prepare(`
-    INSERT INTO goals (user_id, name, category, target_cents, current_cents, deadline, priority, icon, status, auto_save_cents, auto_save_frequency, round_up_enabled)
-    VALUES (?, 'Smart Coding Laptop', 'gadget', 1200000, 960000, '2026-12-20', 'high', '💻', 'active', 50000, 'weekly', 1)
-  `).run(leoId);
+      db.prepare(`
+        INSERT INTO goals (user_id, name, category, target_cents, current_cents, deadline, priority, icon, status, auto_save_cents, auto_save_frequency, round_up_enabled)
+        VALUES (?, 'Smart Coding Laptop', 'gadget', 1200000, 960000, '2026-12-20', 'high', '💻', 'active', 50000, 'weekly', 1)
+      `).run(leoId);
+    }
 
-  // 3. Riya Sharma (Individual Adult)
-  const riyaResult = db.prepare(`
-    INSERT INTO users (full_name, email, password_hash, role, account_mode, age, everyday_cents, emergency_cents, savings_cents, split_everyday, split_emergency, split_savings, currency, monthly_expenses_cents)
-    VALUES (?, ?, ?, 'individual', 'myself', 28, 3500000, 18000000, 9500000, 50, 30, 20, 'INR', 3000000)
-  `).run("Riya Sharma", "riya@example.com", defaultPasswordHash);
-  const riyaId = riyaResult.lastInsertRowid;
+    // 3. Riya Sharma (Individual Adult)
+    const existingRiya = db.prepare("SELECT id FROM users WHERE email = ?").get("riya@example.com");
+    let riyaId = existingRiya?.id;
+    if (!riyaId) {
+      const riyaResult = db.prepare(`
+        INSERT INTO users (full_name, email, password_hash, role, account_mode, age, everyday_cents, emergency_cents, savings_cents, split_everyday, split_emergency, split_savings, currency, monthly_expenses_cents)
+        VALUES (?, ?, ?, 'individual', 'myself', 28, 3500000, 18000000, 9500000, 50, 30, 20, 'INR', 3000000)
+      `).run("Riya Sharma", "riya@example.com", defaultPasswordHash);
+      riyaId = riyaResult.lastInsertRowid;
 
-  // Goals for Riya
-  db.prepare(`
-    INSERT INTO goals (user_id, name, category, target_cents, current_cents, deadline, priority, icon, status, auto_save_cents, auto_save_frequency, round_up_enabled)
-    VALUES (?, 'Trip to Japan', 'travel', 15000000, 11250000, '2027-04-15', 'high', '✈️', 'active', 1000000, 'monthly', 1)
-  `).run(riyaId);
+      db.prepare(`
+        INSERT INTO goals (user_id, name, category, target_cents, current_cents, deadline, priority, icon, status, auto_save_cents, auto_save_frequency, round_up_enabled)
+        VALUES (?, 'Trip to Japan', 'travel', 15000000, 11250000, '2027-04-15', 'high', '✈️', 'active', 1000000, 'monthly', 1)
+      `).run(riyaId);
 
-  db.prepare(`
-    INSERT INTO goals (user_id, name, category, target_cents, current_cents, deadline, priority, icon, status, auto_save_cents, auto_save_frequency, round_up_enabled)
-    VALUES (?, '6-Month Emergency Safety Net', 'emergency', 18000000, 18000000, '2026-12-31', 'high', '🛡️', 'completed', 0, 'none', 0)
-  `).run(riyaId);
+      db.prepare(`
+        INSERT INTO goals (user_id, name, category, target_cents, current_cents, deadline, priority, icon, status, auto_save_cents, auto_save_frequency, round_up_enabled)
+        VALUES (?, '6-Month Emergency Safety Net', 'emergency', 18000000, 18000000, '2026-12-31', 'high', '🛡️', 'completed', 0, 'none', 0)
+      `).run(riyaId);
+    }
 
-  // 4. Aman Verma (Teen / Student)
-  const amanResult = db.prepare(`
-    INSERT INTO users (full_name, email, password_hash, role, account_mode, age, accountability_partner_email, everyday_cents, emergency_cents, savings_cents, split_everyday, split_emergency, split_savings, currency, monthly_expenses_cents)
-    VALUES (?, ?, ?, 'individual', 'teen', 17, 'mentor@example.com', 450000, 300000, 2750000, 50, 30, 20, 'INR', 500000)
-  `).run("Aman Verma", "aman@example.com", defaultPasswordHash);
-  const amanId = amanResult.lastInsertRowid;
+    // 4. Aman Verma (Teen / Student)
+    const existingAman = db.prepare("SELECT id FROM users WHERE email = ?").get("aman@example.com");
+    let amanId = existingAman?.id;
+    if (!amanId) {
+      const amanResult = db.prepare(`
+        INSERT INTO users (full_name, email, password_hash, role, account_mode, age, accountability_partner_email, everyday_cents, emergency_cents, savings_cents, split_everyday, split_emergency, split_savings, currency, monthly_expenses_cents)
+        VALUES (?, ?, ?, 'individual', 'teen', 17, 'mentor@example.com', 450000, 300000, 2750000, 50, 30, 20, 'INR', 500000)
+      `).run("Aman Verma", "aman@example.com", defaultPasswordHash);
+      amanId = amanResult.lastInsertRowid;
 
-  // Goal for Aman
-  db.prepare(`
-    INSERT INTO goals (user_id, name, category, target_cents, current_cents, deadline, priority, icon, status, auto_save_cents, auto_save_frequency, round_up_enabled)
-    VALUES (?, 'Study Laptop', 'gadget', 5500000, 2750000, '2027-01-31', 'high', '💻', 'active', 200000, 'monthly', 1)
-  `).run(amanId);
+      db.prepare(`
+        INSERT INTO goals (user_id, name, category, target_cents, current_cents, deadline, priority, icon, status, auto_save_cents, auto_save_frequency, round_up_enabled)
+        VALUES (?, 'Study Laptop', 'gadget', 5500000, 2750000, '2027-01-31', 'high', '💻', 'active', 200000, 'monthly', 1)
+      `).run(amanId);
+    }
 
-  console.log("✅ Seed demo accounts initialized (Sarah, Leo, Riya, Aman).");
+    console.log("✅ Seed demo accounts initialized (Sarah, Leo, Riya, Aman).");
+  })();
+  return seedingPromise;
 }
 
 seedDemoAccounts().catch(console.error);
